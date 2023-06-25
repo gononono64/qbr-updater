@@ -1,0 +1,141 @@
+
+local function DownloadAndInstallGitHubRepo(url, path)
+    local username, repository = url:match("github.com/([^/]+)/([^/]+)")
+    local downloadUrl = string.format("https://github.com/%s/%s/archive/refs/heads/main.zip", username, repository)
+
+    -- Download the file
+    local tempFolder = os.getenv("temp")
+    local zipPath = tempFolder .. '\\' .. repository .. '.zip'
+    local tempZipFolder = tempFolder .. '\\' .. repository .. '-main'
+
+    local downloadCMD = string.format("curl -L -o \"%s\" \"%s\"", zipPath, downloadUrl)
+    local unpackCMD = string.format("tar -xf \"%s\" -C \"%s\"", zipPath, tempFolder)
+    local renameAndMoveCMD = string.format("move %s %s", tempZipFolder, path)
+    local cleanupCMD = string.format("del /f %s", zipPath)
+
+    local handle = io.popen(downloadCMD .. " && " .. unpackCMD .. " && " .. renameAndMoveCMD .. " && " .. cleanupCMD)
+    local result = handle:read("*a")
+    handle:close()
+    if result then 
+        print(
+            "\n\t============================= Downloaded and Installed: " .. repository .. " =============================",
+            "\n\tDownload URL:", downloadUrl,
+            "\n\tDownload Path:", zipPath,
+            "\n\tUnpack Path:", tempZipFolder,
+            "\n\tMove Path:", path,
+            "\n\tResult:", result,
+            "\n\t=================================================================================================="
+        )
+
+        return true
+    end
+end
+
+
+
+local function GetFileTextFromGitHubRepo(url, filename, cb)
+    if not cb or type(cb) ~= "function" then
+        return
+    end
+    local username, repository = url:match("github.com/([^/]+)/([^/]+)")
+    local fileURL = string.format("https://raw.githubusercontent.com/%s/%s/main/%s", username, repository, filename)
+    -- cb params are (error, responseText, responseHeaders)
+    PerformHttpRequest(fileURL, function(response, responseText, responseHeaders)
+        cb(response, responseText, responseHeaders)
+    end)
+end
+
+local function GetVersionNumberFromFile(filePath)
+    local file = io.open(filePath, "r")
+    if not file then
+        return
+    end
+    local fileContents = file:read("*a")
+    file:close()
+    local versionNumber = fileContents:match("version%s+'([%d%.]+)'")
+    return versionNumber
+end
+
+
+function UpdateServer()
+    local currentResourceName = string.gsub(GetCurrentResourceName(), " ", ""):lower()
+    
+    Citizen.CreateThread(function()
+        local fallbackPath = GetResourcePath(currentResourceName)
+        if not fallbackPath then print("Error getting fallback path!") return end
+        fallbackPath = string.gsub(fallbackPath, "//", "/")
+        fallbackPath = string.gsub(fallbackPath, "/", "\\")
+        
+
+        for resourceName, url in pairs(Config.Resources) do
+            local resourcePathRaw = GetResourcePath(resourceName) or ''
+            if resourcePathRaw == '' then
+                local pattern = 'qbr%-updater'
+                resourcePathRaw = string.gsub(fallbackPath, pattern, resourceName )                     
+            end     
+            
+            if resourcePathRaw then 
+                local resourcePath = string.gsub(resourcePathRaw, "//", "/")
+                resourcePath = string.gsub(resourcePath, "/", "\\")
+                local resourceVersionFilePath = string.format("%s/fxmanifest.lua", resourcePath)
+                local resourceVersion = GetVersionNumberFromFile(resourceVersionFilePath)
+
+                GetFileTextFromGitHubRepo(url, "fxmanifest.lua", function(error, responseText, responseHeaders)
+                    if error ~= 200 then
+                        print(string.format("Error getting file from %s: %s", url, error))
+                        return
+                    end
+                    local versionNumber = responseText:match("version%s+'([%d%.]+)'")
+                    
+                    if not versionNumber or not resourceVersion or versionNumber ~= resourceVersion then 
+                        DownloadAndInstallGitHubRepo(url, resourcePath)
+                    end
+                end)
+            end
+            Wait(100)
+        end  
+        print("All registered resources updated!")  
+    end)    
+end
+
+local function RemoveResouce(resourceName)
+    local resourcePathRaw = GetResourcePath(resourceName)
+    if not resourcePathRaw then return end
+
+    local resourcePath = string.gsub(resourcePathRaw, "//", "/")
+    resourcePath = string.gsub(resourcePath, "/", "\\")
+    
+    local removeCMD = string.format("rmdir /s /q \"%s\"", resourcePath)
+    local handle = io.popen(removeCMD)
+    local result = handle:read("*a")
+    handle:close()
+    if result then 
+        print(
+            "\n\t============================= Removed: " .. resourceName .. " =============================",
+            "\n\tPath:", resourcePath,
+            "\n\tResult:", result,
+            "\n\t=================================================================================================="
+        )
+        return true
+    end
+
+    return false 
+end
+
+local RemoveAllResources = function()
+    for resourceName, url in pairs(Config.Resources) do
+        RemoveResouce(resourceName)
+    end
+    print("All registered resources removed!")
+end
+
+
+RegisterCommand('qb-update', function()
+    UpdateServer()
+end, true) 
+
+RegisterCommand('qb-freshupdate', function()
+    RemoveAllResources()
+    UpdateServer()    
+end, true)
+
