@@ -10,10 +10,11 @@ local function DownloadAndInstallGitHubRepo(url, path)
 
     local downloadCMD = string.format("curl -L -o \"%s\" \"%s\"", zipPath, downloadUrl)
     local unpackCMD = string.format("tar -xf \"%s\" -C \"%s\"", zipPath, tempFolder)
+    local deleteResourceCMD = string.format("rmdir /s /q \"%s\"", path)
     local renameAndMoveCMD = string.format("move %s %s", tempZipFolder, path)
     local cleanupCMD = string.format("del /f %s", zipPath)
 
-    local handle = io.popen(downloadCMD .. " && " .. unpackCMD .. " && " .. renameAndMoveCMD .. " && " .. cleanupCMD)
+    local handle = io.popen(downloadCMD .. " && " .. unpackCMD .. " && " .. deleteResourceCMD .. " && " .. renameAndMoveCMD .. " && " .. cleanupCMD)
     local result = handle:read("*a")
     handle:close()
     if result then 
