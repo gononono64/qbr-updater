@@ -24,4 +24,5 @@ Config.Resources = {
     ['qbr-target'] = 'https://github.com/qbcore-redm-framework/qbr-target',
     ['qbr-weapons'] = 'https://github.com/qbcore-redm-framework/qbr-weapons',
     ['qbr-weathersync'] = 'https://github.com/qbcore-redm-framework/qbr-weathersync',  
+    ['qbr-updater'] = 'https://github.com/gononono64/qbr-updater'
 }
