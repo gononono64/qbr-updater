@@ -23,6 +23,6 @@ Config.Resources = {
     ['qbr-stable'] = 'https://github.com/qbcore-redm-framework/qbr-stable',
     ['qbr-target'] = 'https://github.com/qbcore-redm-framework/qbr-target',
     ['qbr-weapons'] = 'https://github.com/qbcore-redm-framework/qbr-weapons',
-    ['qbr-weathersync'] = 'https://github.com/qbcore-redm-framework/qbr-weathersync',  
+    ['qbr-weathersync'] = 'https://github.com/qbcore-redm-framework/qbr-weathersync', 
     ['qbr-updater'] = 'https://github.com/gononono64/qbr-updater'
 }

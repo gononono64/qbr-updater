@@ -56,6 +56,27 @@ local function GetVersionNumberFromFile(filePath)
     return versionNumber
 end
 
+local function CompareVersionNumbers(version1, version2)
+    local version1Parts = {}
+    for part in version1:gmatch("%d+") do
+        table.insert(version1Parts, tonumber(part))
+    end
+    local version2Parts = {}
+    for part in version2:gmatch("%d+") do
+        table.insert(version2Parts, tonumber(part))
+    end
+    for i = 1, math.max(#version1Parts, #version2Parts) do
+        local part1 = version1Parts[i] or 0
+        local part2 = version2Parts[i] or 0
+        if part1 > part2 then
+            return 1
+        elseif part1 < part2 then
+            return -1
+        end
+    end
+    return 0
+end
+
 
 function UpdateServer()
     local currentResourceName = string.gsub(GetCurrentResourceName(), " ", ""):lower()
@@ -87,7 +108,7 @@ function UpdateServer()
                     end
                     local versionNumber = responseText:match("version%s+'([%d%.]+)'")
                     
-                    if not versionNumber or not resourceVersion or versionNumber ~= resourceVersion then 
+                    if not versionNumber or not resourceVersion or CompareVersionNumbers(versionNumber, resourceVersion) > 0 then 
                         DownloadAndInstallGitHubRepo(url, resourcePath)
                     end
                 end)
