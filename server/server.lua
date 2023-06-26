@@ -10,13 +10,39 @@ local function DownloadAndInstallGitHubRepo(url, path)
 
     local downloadCMD = string.format("curl -L -o \"%s\" \"%s\"", zipPath, downloadUrl)
     local unpackCMD = string.format("tar -xf \"%s\" -C \"%s\"", zipPath, tempFolder)
-    local deleteResourceCMD = string.format("rmdir /s /q \"%s\"", path)
-    local renameAndMoveCMD = string.format("move %s %s", tempZipFolder, path)
-    local cleanupCMD = string.format("del /f %s", zipPath)
+    local deleteResourceCMD = string.format("if exist \"%s\" rmdir /s /q \"%s\"", path, path)
+    local renameAndMoveCMD = string.format("move \"%s\" \"%s\"", tempZipFolder, path)
+    local cleanupCMD = string.format("del /f \"%s\"", zipPath)
 
-    local handle = io.popen(downloadCMD .. " && " .. unpackCMD .. " && " .. deleteResourceCMD .. " && " .. renameAndMoveCMD .. " && " .. cleanupCMD)
-    local result = handle:read("*a")
-    handle:close()
+    local downloadHandle = io.popen(downloadCMD)
+    local downloadResult = downloadHandle:read("*a")
+    downloadHandle:close()
+    if not downloadResult then return end
+
+    local unpackHandle = io.popen(unpackCMD)
+    local unpackResult = unpackHandle:read("*a")
+    unpackHandle:close()
+    if not unpackResult then return end
+
+    local deleteResourceHandle = io.popen(deleteResourceCMD)
+    local deleteResourceResult = deleteResourceHandle:read("*a")
+    deleteResourceHandle:close()
+
+    local renameAndMoveHandle = io.popen(renameAndMoveCMD)
+    local renameAndMoveResult = renameAndMoveHandle:read("*a")
+    renameAndMoveHandle:close()
+
+    local cleanupHandle = io.popen(cleanupCMD)
+    local cleanupResult = cleanupHandle:read("*a")
+    cleanupHandle:close()
+
+    local result = [[
+        ]] .. downloadResult .. [[
+        ]] .. unpackResult .. [[
+        ]] .. deleteResourceResult .. [[
+        ]] .. renameAndMoveResult .. [[
+        ]] .. cleanupResult .. [[
+    ]] --downloadResult unpackResult and deleteResourceResult and renameAndMoveResult and cleanupResult
     if result then 
         print(
             "\n\t============================= Downloaded and Installed: " .. repository .. " =============================",
@@ -78,7 +104,7 @@ local function CompareVersionNumbers(version1, version2)
     return 0
 end
 
-
+local couldNotPullFXManifest = {}
 function UpdateServer()
     local currentResourceName = string.gsub(GetCurrentResourceName(), " ", ""):lower()
     
@@ -105,6 +131,7 @@ function UpdateServer()
                 GetFileTextFromGitHubRepo(url, "fxmanifest.lua", function(error, responseText, responseHeaders)
                     if error ~= 200 then
                         print(string.format("Error getting file from %s: %s", url, error))
+                        couldNotPullFXManifest[resourceName] = true
                         return
                     end
                     local versionNumber = responseText:match("version%s+'([%d%.]+)'")
@@ -116,6 +143,11 @@ function UpdateServer()
             end
             Wait(100)
         end  
+        for resource, cNPFFXM in pairs(couldNotPullFXManifest) do
+            if cNPFFXM then
+                print("Could not pull fxmanifest.lua from " .. resource)
+            end
+        end
         print("All registered resources updated!")  
     end)    
 end
