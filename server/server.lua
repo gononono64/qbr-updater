@@ -1,4 +1,6 @@
 
+
+
 local function DownloadAndInstallGitHubRepo(url, path)
     local username, repository = url:match("github.com/([^/]+)/([^/]+)")
     local downloadUrl = string.format("https://github.com/%s/%s/archive/refs/heads/main.zip", username, repository)
@@ -58,15 +60,12 @@ local function DownloadAndInstallGitHubRepo(url, path)
     end
 end
 
-
-
 local function GetFileTextFromGitHubRepo(url, filename, cb)
     if not cb or type(cb) ~= "function" then
         return
     end
     local username, repository = url:match("github.com/([^/]+)/([^/]+)")
     local fileURL = string.format("https://raw.githubusercontent.com/%s/%s/main/%s", username, repository, filename)
-    -- cb params are (error, responseText, responseHeaders)
     PerformHttpRequest(fileURL, function(response, responseText, responseHeaders)
         cb(response, responseText, responseHeaders)
     end)
@@ -105,7 +104,7 @@ local function CompareVersionNumbers(version1, version2)
 end
 
 local couldNotPullFXManifest = {}
-function UpdateServer()
+local function UpdateServer()
     local currentResourceName = string.gsub(GetCurrentResourceName(), " ", ""):lower()
     
     Citizen.CreateThread(function()
@@ -192,4 +191,40 @@ RegisterCommand('qb-freshupdate', function()
     RemoveAllResources()
     UpdateServer()    
 end, true)
+
+RegisterCommand('qb-install', function(source, args, rawCommand)
+    local url = args[1]        
+    local password = args[2]
+    assert(url, "No URL provided!")    
+    local username, repository = url:match("github.com/([^/]+)/([^/]+)")
+    assert(username and repository, "Invalid URL provided!")
+    local resourcePath = GetResourcePath(repository)
+
+    if Config.EnableAdditionalSecurity and not resourcePath then
+        assert(password, "No password provided!")
+        assert(password == Config.Password, "Invalid password provided!")
+    end
+    if not resourcePath then
+        resourcePath = GetResourcePath(GetCurrentResourceName())
+        assert(resourcePath, "Error getting fallback path!")
+        local pattern = 'qbr%-updater'
+        resourcePath = string.gsub(resourcePath, pattern, repository)   
+    end
+    resourcePath = string.gsub(resourcePath, "//", "/")
+    resourcePath = string.gsub(resourcePath, "/", "\\")
+    print("Installing " .. repository .. " to " .. resourcePath)
+    DownloadAndInstallGitHubRepo(url, resourcePath)
+end, true)
+
+
+CreateThread(function()
+    TriggerClientEvent('chat:addSuggestion', -1, '/qb-update', 'Update all qb resources')
+    TriggerClientEvent('chat:addSuggestion', -1, '/qb-freshupdate', 'Remove all qb resources and update them')
+    TriggerClientEvent('chat:addSuggestion', -1, '/qb-install', 'Download and soft-install GitHub resource', {
+        { name="url", help="The GitHub URL of the resource you want to install. Example: 'https://github.com/gononono64/qb-updater'" },
+        { name="password", help="Required if enabled in config.lua and the resource is not already installed." }
+    })
+
+end)
+
 
