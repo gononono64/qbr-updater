@@ -17,6 +17,11 @@ Errors = {
         emoji = Emojis.error,
         message = "[FATAL ERROR(-2)]: Error resolving resource path for %s!",
     },
+    ['soft_resolve_install_resource_path'] = {
+        code = 2,
+        emoji = Emojis.error,
+        message = "[ERROR(2) SKIPPING \"%s\"]: Error resolving resource path for %s!",
+    },
     ['recipe_not_found'] = {
         code = -3,
         emoji = Emojis.error,

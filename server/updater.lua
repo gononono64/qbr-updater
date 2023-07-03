@@ -152,9 +152,13 @@ function UpdateServer(cb)
             local useLatestReleaseLink = v.useLatestReleaseLink
             local resourcePathRaw = GetResourcePath(resourceName) or nil
             if not resourcePathRaw  then
-                local pattern = currentResourceName
+                local pattern = "qbr%-updater"
                 resourcePathRaw = string.gsub(fallbackPath, pattern, resourceName )
                 Print.Warning("Could not find resource path for " .. resourceName .. "! Using fallback path: " .. resourcePathRaw)
+                if resourcePathRaw == fallbackPath then
+                    LogError('soft_resolve_install_resource_path', resourceName)
+                    goto continue
+                end
             end
 
             if not resourcePathRaw then
@@ -189,6 +193,7 @@ function UpdateServer(cb)
                 end
             end
             Wait(100)
+            ::continue::
         end
         print("Done updating resources")
         Print.Logs()

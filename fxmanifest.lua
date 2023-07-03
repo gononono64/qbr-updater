@@ -4,7 +4,7 @@ rdr3_warning 'I acknowledge that this is a prerelease build of RedM, and I am aw
 
 author 'MrCrowley - https://github.com/gononono64 '
 description 'QBRCore Resource Updater'
-version '1.0.4'
+version '1.0.5'
 
 server_scripts {
     'config.lua',

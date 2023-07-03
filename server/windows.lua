@@ -71,6 +71,7 @@ function Windows.Recipe(url, branch, path, ignorePaths, useLatestReleaseLink)
         return "windows_no_temp_folder", Errors.windows_no_temp_folder
     end
     tempFolder = tempFolder .. '\\' .. GetCurrentResourceName()
+    tempFolder = Path.CorrectPath(tempFolder)
     Windows.CreateDirectoryIfNotExists(tempFolder)
     if not Windows.DirectoryExists(tempFolder) then
         return "windows_no_temp_resource_folder", Errors.windows_no_temp_resource_folder
