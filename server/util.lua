@@ -43,7 +43,6 @@ function Path.GetCacheDirectory()
     local categoryFolder = Path.GetParentDirectory(path)
     local resourcesFolder = Path.GetParentDirectory(categoryFolder)
     local baseFolder = Path.GetParentDirectory(resourcesFolder)
-    print(path.."\n"..categoryFolder.."\n"..resourcesFolder.."\n"..baseFolder)
     return Path.CorrectPath(baseFolder .. "\\cache\\")
 end
 
@@ -52,6 +51,3 @@ function Path.GetFXManifestPath(resourcePath)
     return fxmanifestPath
 end
 
-RegisterCommand('iswindows', function(source, args, rawCommand)
-    print(Path.GetCacheDirectory())
-end, true)

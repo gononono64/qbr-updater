@@ -1,5 +1,6 @@
 Config = {}
 Config.OS = "windows"
+Config.InstallMissingResources = false -- If true, on update will install resources listed below that are not present on the server.
 
 Config.Resources = {
     ['qbr-adminmenu'] = {

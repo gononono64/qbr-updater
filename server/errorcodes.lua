@@ -22,6 +22,11 @@ Errors = {
         emoji = Emojis.error,
         message = "[ERROR(2) SKIPPING \"%s\"]: Error resolving resource path for %s!",
     },
+    ['missing_resource_no_force_install'] = {
+        code = 3,
+        emoji = Emojis.info,
+        message = "[Info(3) SKIPPING \"%s\"]: Missing resource %s and Config.InstallMissingResources is disabled!",
+    },
     ['recipe_not_found'] = {
         code = -3,
         emoji = Emojis.error,

@@ -16,9 +16,9 @@ function LogSuccess(errorIndex, resourceName, message)
     Logs.Success[#Logs.Success + 1] = {emoji = emoji, message = message, resourceName = resourceName}
 end
 
-function LogError(errorIndex, resourceName, message)
+function LogError(errorIndex, resourceName, message, ...)
     local emoji = Errors.GetErrorEmoji(errorIndex)
-    local message = message or Errors.GetErrorMessage(errorIndex, resourceName)
+    local message = message or Errors.GetErrorMessage(errorIndex, resourceName, ...)
     Logs.Error[#Logs.Error + 1] = {emoji = emoji, message = message, resourceName = resourceName}
 end
 

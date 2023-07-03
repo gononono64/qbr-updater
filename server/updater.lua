@@ -103,7 +103,8 @@ function RetrieveResourceVersionAndRunRecipe(resourceName, resourcePath, branch,
         end
         local versionNumber = responseText:match("version%s+'([%d%.]+)'")
         if not versionNumber then
-            return cb("fxmanifest_version_not_found", Errors.fxmanifest_version_not_found, resourceName)
+            cb("fxmanifest_version_not_found", Errors.fxmanifest_version_not_found, resourceName)
+            return
         end
         if not resourceVersion or CompareVersionNumbers(versionNumber, resourceVersion) > 0 then
             local ignoredPaths = GenerateIgnoredPaths(resourcePath, resourceName)
@@ -135,7 +136,7 @@ function ResetUpdater()
     terminate = false
 end
 
-function UpdateServer(cb)
+function UpdateServer(force, cb)
     local currentResourceName = string.gsub(GetCurrentResourceName(), " ", ""):lower()
     ResetUpdater()
     CreateThread(function()
@@ -151,52 +152,62 @@ function UpdateServer(cb)
             local branch = v.branch or "main"
             local useLatestReleaseLink = v.useLatestReleaseLink
             local resourcePathRaw = GetResourcePath(resourceName) or nil
+            local forceInstall = force or Config.InstallMissingResources
+            local skip = false
             if not resourcePathRaw  then
-                local pattern = "qbr%-updater"
-                resourcePathRaw = string.gsub(fallbackPath, pattern, resourceName )
-                Print.Warning("Could not find resource path for " .. resourceName .. "! Using fallback path: " .. resourcePathRaw)
-                if resourcePathRaw == fallbackPath then
-                    LogError('soft_resolve_install_resource_path', resourceName)
-                    goto continue
-                end
-            end
-
-            if not resourcePathRaw then
-                LogError('resolve_install_resource_path', resourceName)
-                TerminateUpdater()
-                break
-            end
-
-            local resourcePath = Path.CorrectPath(resourcePathRaw)
-            local _errorIndex, _errorData, _resourceName = RetrieveResourceVersionAndRunRecipe( resourceName, resourcePath, branch, url, useLatestReleaseLink,
-                function(errorIndex, errorData, resourceName)
-                    if errorData then
-                        Log(errorIndex, errorData, resourceName)
-                        local errorcode = errorData.code
-                        if errorcode < 0 then
-                            TerminateUpdater()
-                            return errorData
-                        end
-                    else
-                        LogNil(resourceName, "[RetrieveResourceVersionAndRunRecipe-ErrorCB] Triggered without error data")
+                if forceInstall then
+                    local pattern = "qbr%-updater"
+                    resourcePathRaw = string.gsub(fallbackPath, pattern, resourceName )
+                    Print.Warning("Could not find resource path for " .. resourceName .. "! Using fallback path: " .. resourcePathRaw)
+                    if resourcePathRaw == fallbackPath then
+                        LogError('soft_resolve_install_resource_path', resourceName, nil,  resourceName )
+                        skip = true
                     end
+                else
+                    LogError('missing_resource_no_force_install', resourceName, nil,  resourceName )
+                    skip = true
                 end
-            )
+            end
 
-            if _errorData then
-                print(_errorIndex, _errorData, _resourceName)
-                Log(_errorIndex, _errorData, _resourceName)
-                local errorcode = _errorData.code
-                if errorcode < 0 then
+            if not skip then
+                if not resourcePathRaw then
+                    LogError('resolve_install_resource_path', resourceName)
                     TerminateUpdater()
                     break
                 end
+
+                local resourcePath = Path.CorrectPath(resourcePathRaw)
+                local _errorIndex, _errorData, _resourceName = RetrieveResourceVersionAndRunRecipe( resourceName, resourcePath, branch, url, useLatestReleaseLink,
+                    function(errorIndex, errorData, resourceName)
+                        if errorData then
+                            Log(errorIndex, errorData, resourceName)
+                            local errorcode = errorData.code
+                            if errorcode < 0 then
+                                TerminateUpdater()
+                                return errorData
+                            end
+                        else
+                            LogNil(resourceName, "[RetrieveResourceVersionAndRunRecipe-ErrorCB] Triggered without error data")
+                        end
+                    end
+                )
+
+                if _errorData then
+                    Log(_errorIndex, _errorData, _resourceName)
+                    local errorcode = _errorData.code
+                    if errorcode < 0 then
+                        TerminateUpdater()
+                        break
+                    end
+                end
             end
+
+
             Wait(100)
-            ::continue::
         end
-        print("Done updating resources")
         Print.Logs()
+        ClearLogs()
+        Print.Success("Update complete! Server may need to be restarted for changes to take effect.")
     end)
 end
 
