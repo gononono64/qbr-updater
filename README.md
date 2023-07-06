@@ -1,6 +1,6 @@
 # QBR Updater
 
-QBR Updater is a resource for FiveM that allows you to update and manage your server resources easily.
+QBR Updater is a resource for Redm that allows you to update and install server resources easily.
 
 ## Installation
 
