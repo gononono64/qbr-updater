@@ -1,7 +1,9 @@
 Path = {}
 local OS = nil
 function IsWindows()
-    if OS == nil then
+    if OS == 1 then
+        return true
+    elseif OS == nil then
         local windir = os.getenv("windir") ~= nil
         if windir then
             OS = 1

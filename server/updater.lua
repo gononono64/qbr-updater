@@ -42,36 +42,55 @@ function CompareVersionNumbers(version1, version2)
     return 0
 end
 
+local function glob(pattern)
+    local files = {}
+    local handle = io.popen("dir /b /s " .. pattern)
+    local output = handle:read("*a")
+    handle:close()
+
+    for file in output:gmatch("[^\r\n]+") do
+        files[#files + 1] = file
+    end
+
+    return files
+end
+
+
 function GenerateIgnoredPaths(resourcePath, resourceName)
     local ignorePaths = {}
     local configResource = Config.Resources[resourceName]
-    if not configResource then return ignoredPaths end
+    if not configResource then return ignorePaths end
 
     local configIgnore = configResource.ignore
-    if not configIgnore then return ignoredPaths end
-
+    if not configIgnore then return ignorePaths end
+    resourcePath = Path.CorrectPath(resourcePath)
     for _, ignoredPath in ipairs(configIgnore) do
         if string.find(ignoredPath, "*", 1, true) then
-            local pattern = string.gsub(ignoredPath, "*", ".*")
-            local files = io.popen("dir /b /s " .. resourcePath .. "\\" .. pattern):lines()
-            for file in files do
+            local escapedPath = string.gsub(resourcePath, "[%^%$%(%)%%%.%[%]%*%+%-%?]", "%%%1")
+            local fullPath = resourcePath .. "\\" .. ignoredPath
+            fullPath = Path.CorrectPath(fullPath)
+            local matchingFiles = glob(fullPath)
+
+            for _, file in ipairs(matchingFiles) do
                 ignorePaths[#ignorePaths + 1] = {
                     path = file,
-                    relativePath = string.gsub(file, resourcePath .. "\\", "")
+                    relativePath = Path.CorrectPath(string.gsub(file, escapedPath , ""))
                 }
-
             end
         else
             local path = resourcePath .. '\\' .. ignoredPath
+            path = Path.CorrectPath(path)
             ignorePaths[#ignorePaths + 1] = {
                 path = path,
-                relativePath = ignoredPath,
+                relativePath = Path.CorrectPath(ignoredPath),
             }
         end
     end
 
     return ignorePaths
 end
+
+
 
 local couldNotPullFXManifest = {}
 function RetrieveResourceVersionAndRunRecipe(resourceName, resourcePath, branch, url, useLatestReleaseLink, cb)
