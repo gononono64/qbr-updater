@@ -7,6 +7,9 @@ QBR Updater is a resource for Redm that allows you to update and install server 
 1. Drag and drop the `qb-updater` folder into your server's resource folder.
 2. Add `start qb-updater` to your server.cfg file.
 
+## Requirements
+OS: Windows
+
 ## Usage
 
 QBR Updater provides the following commands:
