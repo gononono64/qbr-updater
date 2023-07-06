@@ -19,7 +19,7 @@ QBR Updater provides the following commands:
 - Alternatively, you can use the command `/qb-freshupdate` to remove all registered resources and replace them with a fresh install. This command is useful if you want to start with a clean installation of resources.
 - You can also use the command `/qb-install [url] [password]` to install resources directly from within your game. Specify the URL of the resource and provide an optional password if required.
 
-## To do
+## ToDo
 
 1. Linux compatability 
 2. Auto update artifacts
